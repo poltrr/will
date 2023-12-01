@@ -279,6 +279,9 @@ CustomPlayerModel<public> := module:
         # Custom model creative prop.
         @editable
         Model<private> : creative_prop = creative_prop{}
+
+        @editable
+        ButtonToAssign : button_device = button_device{}
         
         # Empty struct to display a title in the Details inspector tab.
         @editable CinematicSequencers<private> : struct_title = struct_title{}
@@ -392,6 +395,9 @@ CustomPlayerModel<public> := module:
         ModelTranslationZOffsetCrouch<private> : float = -56.0
 
         # Methods #
+
+        OnBegin<override>()<suspends> : void =
+            ButtonToAssign.InteractedWithEvent.Subscribe(OnButtonToAssignInteractedWith)
         
         # Assign control of the custom model to `Player`.
         # Any previous player will lose control.
@@ -561,6 +567,10 @@ CustomPlayerModel<public> := module:
         # `(:fort_character).CrouchedEvent()` callback.
         OnPlayerCrouched<private>(FortCharacter : fort_character, Crouching : logic) : void =
             set IsCrouching = Crouching
+
+        OnButtonToAssignInteractedWith<private>(InAgent : agent) : void =
+            if (Player := player[InAgent]):
+                GiveControlTo(Player)
 
         GetPlayer<public>()<transacts><decides> : player = MaybePlayer?
 

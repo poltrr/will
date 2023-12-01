@@ -396,14 +396,20 @@ CustomPlayerModel<public> := module:
         # Assign control of the custom model to `Player`.
         # Any previous player will lose control.
         GiveControlTo<public>(Player : player) : void =
-            StateMachine.Stop()
+            Stop() # Stop previous control.
             AssignedPlayerSuccessfully := AssignPlayer(Player)
             if (AssignedPlayerSuccessfully?):
                 StateMachine.Start(Self)
             else { Print("[Error] Failed to assign `Player` to `CustomPlayerModel`.", ?Color := NamedColors.Red) }
         
         # Stop the control of the custom model.
-        Stop<public>() : void = StateMachine.Stop()
+        Stop<public>() : void =
+            StateMachine.Stop()
+            if (Player := MaybePlayer?):
+                set MaybePlayer = false
+                # Make previous player visible.
+                if (FortCharacter := Player.GetFortCharacter[]):
+                    FortCharacter.Show()
 
         # Play the animation sequence for `State`, if overridden.
         PlaySequenceForState<internal>(State : state) : void =

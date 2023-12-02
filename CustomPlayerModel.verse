@@ -298,7 +298,7 @@ CustomPlayerModel<public> := module:
         Model<private> : creative_prop = creative_prop{}
 
         # Manager of all custom model devices.
-        Manager<private> : custom_player_model = custom_player_model{}
+        Manager<private> : custom_player_model_manager = custom_player_model_manager{}
         
         # Empty struct to display a title in the Details inspector tab.
         @editable CinematicSequencers<private> : struct_title = struct_title{}

@@ -25,11 +25,10 @@ CustomPlayerModelUtils<public> := module:
             Button.InteractedWithEvent.Subscribe(OnButtonInteractedWith)
 
         GetAvailableCustomPlayerModelDevice<private>()<transacts><decides> : custom_player_model =
-            for (Device : CustomPlayerModelDevices):
-                if (AssignedPlayer := Device.GetPlayer[]) {}
-                else:
-                    return Device
-            false?
+            var MaybeAvailable : ?custom_player_model = false
+            for (Device : CustomPlayerModelDevices; not MaybeAvailable?):
+                set MaybeAvailable = option{Device}
+            MaybeAvailable?
 
         OnButtonInteractedWith<private>(InAgent : agent) : void =
             if:

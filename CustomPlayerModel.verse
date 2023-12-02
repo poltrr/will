@@ -1,5 +1,6 @@
 using { /Fortnite.com/Characters }
 using { /Fortnite.com/Devices }
+using { /Fortnite.com/Game }
 using { /UnrealEngine.com/Temporary/SpatialMath }
 using { /Verse.org/Simulation }
 using { /Verse.org/Colors }
@@ -386,6 +387,10 @@ CustomPlayerModel<public> := module:
         @editable
         IgnoreForwardOffsetWhenNotMoving : logic = true
 
+        # Whether the custom model should be removed when the player dies.
+        @editable
+        RemoveOnDeath : logic = true
+
         # State machine that handles the custom model's behavior.
         StateMachine<private> : fsm = fsm{}
 
@@ -527,6 +532,8 @@ CustomPlayerModel<public> := module:
             var NoMovementFrames : int = 0
             
             Cancelable := FortCharacter.CrouchedEvent().Subscribe(OnPlayerCrouched)
+
+            CancelableEliminated := FortCharacter.EliminatedEvent().Subscribe(OnPlayerEliminated)
             
             loop:
                 if (CurrentPlayer := MaybePlayer?; CurrentPlayer = Player):
@@ -558,6 +565,8 @@ CustomPlayerModel<public> := module:
             
             # Stop listening to previous player's `CrouchedEvent()`.
             Cancelable.Cancel()
+
+            CancelableEliminated.Cancel()
         
         # Update's `CurrentDirection` based on the player's movement.
         UpdateDirection<private>(Rotation : rotation, Displacement2 : vector2) : void =
@@ -582,6 +591,10 @@ CustomPlayerModel<public> := module:
         # `(:fort_character).CrouchedEvent()` callback.
         OnPlayerCrouched<private>(FortCharacter : fort_character, Crouching : logic) : void =
             set IsCrouching = Crouching
+
+        OnPlayerEliminated<private>(Result : elimination_result) : void =
+            if (RemoveOnDeath?):
+                Stop()
 
         GetPlayer<public>()<transacts><decides> : player = MaybePlayer?
 

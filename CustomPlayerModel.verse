@@ -272,6 +272,22 @@ CustomPlayerModel<public> := module:
                     return option{Owner.GetStateIdle()}
             
             false
+
+    custom_player_model_manager<public> := class(creative_device):
+        # Attributes #
+
+        # Map player to the custom_player_model devices they're controlling.
+        var CustomPlayerModelAssignedTo<private> : [player]?custom_player_model = map{}
+
+        Add<public>(Player : player, Device : custom_player_model) : void =
+            if (set CustomPlayerModelAssignedTo[Player] = option{Device}) {}
+
+        Remove<public>(Player : player) : void =
+            if (set CustomPlayerModelAssignedTo[Player] = false) {}
+
+        # Succeeds if Player is currently controlling a custom model.
+        IsPlayerControlling<public>(Player : player)<transacts><decides> : void =
+            CustomPlayerModelAssignedTo[Player]?
     
     custom_player_model<public> := class(creative_device):
         # Attributes #
@@ -280,8 +296,8 @@ CustomPlayerModel<public> := module:
         @editable
         Model<private> : creative_prop = creative_prop{}
 
-        @editable
-        ButtonToAssign : button_device = button_device{}
+        # Manager of all custom model devices.
+        Manager<private> : custom_player_model = custom_player_model{}
         
         # Empty struct to display a title in the Details inspector tab.
         @editable CinematicSequencers<private> : struct_title = struct_title{}
@@ -395,9 +411,6 @@ CustomPlayerModel<public> := module:
         ModelTranslationZOffsetCrouch<private> : float = -56.0
 
         # Methods #
-
-        OnBegin<override>()<suspends> : void =
-            ButtonToAssign.InteractedWithEvent.Subscribe(OnButtonToAssignInteractedWith)
         
         # Assign control of the custom model to `Player`.
         # Any previous player will lose control.
@@ -405,6 +418,7 @@ CustomPlayerModel<public> := module:
             Stop() # Stop previous control.
             AssignedPlayerSuccessfully := AssignPlayer(Player)
             if (AssignedPlayerSuccessfully?):
+                Manager.Add(Player, Self)
                 StateMachine.Start(Self)
             else { Print("[Error] Failed to assign `Player` to `CustomPlayerModel`.", ?Color := NamedColors.Red) }
         
@@ -413,6 +427,7 @@ CustomPlayerModel<public> := module:
             StateMachine.Stop()
             if (Player := MaybePlayer?):
                 set MaybePlayer = false
+                Manager.Remove(Player)
                 # Make previous player visible.
                 if (FortCharacter := Player.GetFortCharacter[]):
                     FortCharacter.Show()
@@ -567,10 +582,6 @@ CustomPlayerModel<public> := module:
         # `(:fort_character).CrouchedEvent()` callback.
         OnPlayerCrouched<private>(FortCharacter : fort_character, Crouching : logic) : void =
             set IsCrouching = Crouching
-
-        OnButtonToAssignInteractedWith<private>(InAgent : agent) : void =
-            if (Player := player[InAgent]):
-                GiveControlTo(Player)
 
         GetPlayer<public>()<transacts><decides> : player = MaybePlayer?
 

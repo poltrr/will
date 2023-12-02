@@ -421,6 +421,7 @@ CustomPlayerModel<public> := module:
         # Assign control of the custom model to `Player`.
         # Any previous player will lose control.
         GiveControlTo<public>(Player : player) : void =
+            Model.Show()
             Stop() # Stop previous control.
             AssignedPlayerSuccessfully := AssignPlayer(Player)
             if (AssignedPlayerSuccessfully?):
@@ -430,6 +431,7 @@ CustomPlayerModel<public> := module:
         
         # Stop the control of the custom model.
         Stop<public>() : void =
+            Model.Hide()
             StateMachine.Stop()
             if (Player := MaybePlayer?):
                 set MaybePlayer = false

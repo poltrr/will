@@ -4,12 +4,32 @@ using { /Verse.org/Simulation }
 using { CustomPlayerModel }
 
 CustomPlayerModelUtils<public> := module:
+    custom_player_model_manager<public> := class(creative_device):
+        # Attributes #
+
+        # Map player to the custom_player_model devices they're controlling.
+        var CustomPlayerModelAssignedTo<private> : [player]?custom_player_model = map{}
+
+        Add<public>(Player : player, Device : custom_player_model) : void =
+            if (set CustomPlayerModelAssignedTo[Player] = option{Device}) {}
+
+        Remove<public>(Player : player) : void =
+            if (set CustomPlayerModelAssignedTo[Player] = false) {}
+
+        # Succeeds if Player is currently controlling a custom model.
+        IsPlayerControlling<public>(Player : player)<transacts><decides> : void =
+            CustomPlayerModelAssignedTo[Player]?
+
     button_custom_model_assigner<public> := class(creative_device):
         # Attributes #
         
         # Button that assigns model to players that interact with it.
         @editable
         Button<private> : button_device = button_device{}
+
+        # The manager device of the custom models.
+        @editable
+        Manager<private> : custom_player_model_manager = custom_player_model_manager{}
 
         # Custom player model devices that players can be assigned to.
         @editable
@@ -28,5 +48,10 @@ CustomPlayerModelUtils<public> := module:
             false?
 
         OnButtonInteractedWith<private>(InAgent : agent) : void =
-            if (Player := player[InAgent]; CustomPlayerModelDevice := GetAvailableCustomPlayerModelDevice[]):
-               CustomPlayerModelDevice.GiveControlTo(Player)
+            if:
+                Player := player[InAgent]
+                Manager.IsPlayerControlling[Player]
+                CustomPlayerModelDevice := GetAvailableCustomPlayerModelDevice[]
+            then:
+                Manager.Add(Player, CustomPlayerModelDevice)
+                CustomPlayerModelDevice.GiveControlTo(Player)

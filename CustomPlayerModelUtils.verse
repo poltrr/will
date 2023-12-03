@@ -33,8 +33,9 @@ CustomPlayerModelUtils<public> := module:
         OnButtonInteractedWith<private>(InAgent : agent) : void =
             if:
                 Player := player[InAgent]
-                Manager.IsPlayerControlling[Player]
+                not Manager.IsPlayerControlling[Player]
                 CustomPlayerModelDevice := GetAvailableCustomPlayerModelDevice[]
             then:
+                Print("Here")
                 Manager.Add(Player, CustomPlayerModelDevice)
                 CustomPlayerModelDevice.GiveControlTo(Player)

@@ -1,0 +1,155 @@
+import bpy
+import os
+
+# Variables #
+
+vertices = []
+
+triangles = []
+
+#############
+
+# Functions #
+
+# Return declaration of `vector3` from a Vector.
+def to_vector3(v):
+    x, y, z = v
+    return f"vector3{{X := {x}; Y := {y}; Z := {z}}}"
+
+# Return declaration of `triangle` from a MeshPolygon.
+def to_triangle(t):
+    a, b, c = t.vertices
+    v = t.center
+    return f"triangle{{A := {a}; B := {b}; C := {c}; Translation := {to_vector3(v)}}}"
+
+# Return declaration of `edge` from an array [int, int].
+def to_edge(e):
+    index_a, index_b = e
+    return f"edge{{Left := {index_a}; Right := {index_b}}}"
+
+# Return a unique variable name from an `index`.
+def create_variable_name(index):
+    index += 1
+    result = ''
+    while index > 0:
+        index, remainder = divmod(index - 1, 26)
+        result = chr(65 + remainder) + result
+    return result
+
+# Return an array of indexes, corresponding to the neighbors of a triangle `t`.
+def get_neighbors(t):
+    result = [] # List of neighbor indexes, and their shared vertices.
+    for index, triangle in enumerate(triangles):
+        shared_vertices = []
+        for vertex in t.vertices:
+            for other_vertex in triangle.vertices:
+                if vertex == other_vertex:
+                    shared_vertices.append(vertex)
+        # Neighbor found if they share two vertices.
+        if len(shared_vertices) == 2:
+            result.append((index, shared_vertices)) # (neighbor, [a, b])
+    return result
+
+# Return the edge of a triangle, ordered from left to right from the center of a triangle `t`.
+def get_ordered_edge(t, e):
+    center = t.center
+    index_a, index_b = e
+    a = vertices[index_a]
+    b = vertices[index_b]
+    if (a - center).cross(b - center).z < 0:
+        e = (index_b, index_a)
+    return e
+
+# Return 
+def get_edges_from_triangle(a, b, c, center):
+    # Calculate vectors representing edges
+    edge1 = (a, b)
+    edge2 = (b, c)
+    edge3 = (c, a)
+
+    # Determine the order of vectors in the tuple based on their orientation with respect to the center
+    edges = [edge1, edge2, edge3]
+
+    for i in range(3):
+        edge_start, edge_end = edges[i]
+        if (edge_start - center).cross(edge_end - center).z < 0:
+            # Swap the order of vectors if they are not in the correct orientation
+            edges[i] = (edge_end, edge_start)
+
+    return edges
+
+#############
+
+# Specify the file path in the user's home directory
+file_path = os.path.expanduser("~/Documents/Blender/uefn/generated_navmesh.txt")
+
+# Active object.
+obj = bpy.context.active_object
+
+# Error if object not selected.
+if obj and obj.type != 'MESH':
+    raise Exception('No object is selected!')
+
+mesh = obj.data
+
+# Open file.
+with open(file_path, 'w') as file:
+    
+    ############
+    # Vertices #
+    ############
+    
+    file.write("Vertices : []vector3 = ")
+    
+    # Amount of vertices.
+    vertex_count = len(mesh.vertices)
+    
+    # Create empty array.
+    if (vertex_count == 0):
+        file.write("array{}")
+    # Iterate through each vertex.
+    else:
+        file.write("array:\n")
+        for vertex in mesh.vertices:
+            v = obj.matrix_world @ vertex.co
+            vertices.append(v)
+            file.write(f"\t{to_vector3(v)}\n")
+    
+    #############
+    # Triangles #
+    #############
+    
+    file.write("Triangles : []triangle = ")
+    
+    # Amount of faces.
+    face_count = len(mesh.polygons)
+    
+    # Create empty array.
+    if (face_count == 0):
+        file.write("array{}")
+    # Iterate through each face.
+    else:
+        file.write("array:\n")
+        for face in mesh.polygons:
+            triangles.append(face)
+            file.write(f"\t{to_triangle(face)}\n")
+    
+    #################
+    # Set Neighbors #
+    #################
+    
+    # Set neighbors if triangles exist.
+    if (face_count != 0):
+        file.write("if:\n")
+        for index, face in enumerate(mesh.polygons):
+            var_name = create_variable_name(index)
+            file.write(f"\t{var_name} := Triangles[{index}]\n")
+        file.write("then:\n")
+        for index, face in enumerate(mesh.polygons):
+            var_name = create_variable_name(index)
+            file.write(f"\t{var_name}.SetNeighbors(map{{")
+            for neighbor_index, unordered_edge in get_neighbors(face):
+                n_var_name = create_variable_name(neighbor_index)
+                edge = get_ordered_edge(face, unordered_edge)
+                file.write(f"{n_var_name} => {to_edge(edge)}; ")
+            file.write(")\n")

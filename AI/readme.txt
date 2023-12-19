@@ -1,0 +1,1 @@
+FiniteStateMachineByPoltrr.verse is an updated version of the previous FiniteStateMachine.verse file. The custom character model should still use the old FiniteStateMachine.verse while these scripts should use the new FiniteStateMachineByPoltrr.verse.

@@ -269,21 +269,6 @@ NavigationMeshSystemByPoltrr<public> := module:
                     Z := GetClosestPointOnTriangle[Step.Triangle, Step.Translation].Z
                 Triangle := Step.Triangle
         
-        ApplyScaleAndOffset<public>(?Scale : type{t : float where t > 0.0} = 1.0, ?Offset : vector3 = vector3{}) : void =
-            # Applies scale and offset on `Triangles` and `Vertices`.
-            NewTriangles := for (Triangle : Triangles):
-                triangle:
-                    A := Triangle.A
-                    B := Triangle.B
-                    C := Triangle.C
-                    Translation := (Triangle.Translation * Scale) + Offset
-            NewVertices := for (Vertex : Vertices):
-                (Vertex * Scale) + Offset
-            
-            # Updates values.
-            set Triangles = NewTriangles
-            set Vertices = NewVertices
-        
         Draw<public>(?VertexRadius : float = 16.0) : void =
             DebugDraw : debug_draw = debug_draw{Channel := dd_channel}
             # Offset vector for each vertex center.

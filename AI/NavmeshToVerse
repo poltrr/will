@@ -14,7 +14,7 @@ triangles = []
 # Return declaration of `vector3` from a Vector.
 def to_vector3(v):
     x, y, z = v
-    return f"vector3{{X := {x}; Y := {y}; Z := {z}}}"
+    return f"vector3{{X := {x}; Y := {y * -1}; Z := {z}}}"
 
 # Return declaration of `triangle` from a MeshPolygon.
 def to_triangle(t):
@@ -111,7 +111,7 @@ with open(file_path, 'w') as file:
     else:
         file.write("array:\n")
         for vertex in mesh.vertices:
-            v = obj.matrix_world @ vertex.co
+            v = vertex.co
             vertices.append(v)
             file.write(f"\t{to_vector3(v)}\n")
     
@@ -142,14 +142,19 @@ with open(file_path, 'w') as file:
     if (face_count != 0):
         file.write("if:\n")
         for index, face in enumerate(mesh.polygons):
-            var_name = create_variable_name(index)
+            var_name = "Trg_" + create_variable_name(index)
             file.write(f"\t{var_name} := Triangles[{index}]\n")
         file.write("then:\n")
         for index, face in enumerate(mesh.polygons):
-            var_name = create_variable_name(index)
+            var_name = "Trg_" + create_variable_name(index)
             file.write(f"\t{var_name}.SetNeighbors(map{{")
             for neighbor_index, unordered_edge in get_neighbors(face):
-                n_var_name = create_variable_name(neighbor_index)
+                n_var_name = "Trg_" + create_variable_name(neighbor_index)
                 edge = get_ordered_edge(face, unordered_edge)
                 file.write(f"{n_var_name} => {to_edge(edge)}; ")
-            file.write(")\n")
+            file.write("})\n")
+    
+    if (face_count != 0):
+        file.write("\n\tNewNavmesh := navmesh{Triangles := Triangles; Vertices := Vertices}\n")
+        file.write("\t# NewNavmesh.Draw() # Uncomment to draw navigation mesh in-game.\n")
+        file.write("\tset YOUR_NAVMESH_VARIABLE_HERE = NewNavmesh")
